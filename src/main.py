@@ -19,16 +19,16 @@ class Element:
     def calc_reinforcement(self):
         if self.validate_data(self.el_data):
             if self.el_type == 'beam':
-                self.calc_beam()
+                return self.calc_beam()
 
             elif self.el_type == 'col':
-                self.calc_column()
+                return self.calc_column()
 
             elif self.el_type == 'foot':
-                self.calc_foot()
+                return self.calc_foot()
 
             elif self.el_type == 'plate':
-                self.calc_plate()
+                return self.calc_plate()
 
     def get_material_properties(self):
         element_code = self.el_type[0]
@@ -42,54 +42,82 @@ class Element:
         return concrete_properties, steel_properties
 
     def validate_data(self, data_dict):
-        pass
+        # implement function logic later
+        return True
 
     def calc_beam(self):
         # Get material properties
         concrete_prop, steel_prop = self.get_material_properties()
 
         # Concrete
-        f_ck = concrete_prop['fck']  # [MPa]
-        f_cd = f_ck / 1.4  # [MPa]
-        f_ctm = concrete_prop['fctm']  # [MPa]
+        f_ck = concrete_prop['fck'] * 1000  # [kPa]
+        f_cd = f_ck / 1.4  # [kPa]
+        f_ctm = concrete_prop['fctm'] * 1000  # [kPa]
 
         # Steel
-        f_yd = steel_prop['fyd']  # MPa
-        f_yk = steel_prop['fyk']  # MPa
-        bar_diam = float(self.el_data['b_bar_diam_combo']) / 10  # [cm]
-        stirrup_diam = 0.8  # [cm]
+        f_yd = steel_prop['fyd'] * 1000  # [kPa]
+        f_yk = steel_prop['fyk'] * 1000  # [kPa]
+        bar_diam = float(self.el_data['b_bar_diam_combo']) / 1000  # [m]
+        stirrup_diam = 0.008  # [m]
 
         # Geometry
-        height = float(self.el_data['b_height_lineEdit'])  # [cm]
-        width = float(self.el_data['b_width_lineEdit'])  # [cm]
-        nom_cover = float(self.el_data['b_concr_cover_lineEdit'])  # [cm]
+        height = float(self.el_data['b_height_lineEdit']) / 100  # [m]
+        width = float(self.el_data['b_width_lineEdit']) / 100  # [m]
+        nom_cover = float(self.el_data['b_concr_cover_lineEdit']) / 100  # [m]
 
         # Load
         bend_moment = float(self.el_data['b_moment_lineEdit'])  # [kNm]
 
         # Effective height calculation
-        eff_height = height - (nom_cover + stirrup_diam + 0.5 * bar_diam)  # [cm]
+        eff_height = height - (nom_cover + stirrup_diam + 0.5 * bar_diam)  # [m]
 
         # Min. and max. reinforcement area
-        min_area = max((0.26 * (f_ctm / f_yk) * width * eff_height), (0.0013 * width * eff_height))
-        max_area = 0.04 * width * height
+        min_area = max((0.26 * (f_ctm / f_yk) * width * eff_height), (0.0013 * width * eff_height))  # [m^2]
+        max_area = 0.04 * width * height  # [m^2]
 
+        mi_lim = 0.374  # [-]
         # check whether beam section is in support or span area
         if self.el_data['b_sup_section_radioBtn']:
             # Calculations for support section
-            mi = bend_moment / (width / 100 * ((eff_height / 100) ** 2) * f_cd * 1000)  # [-]
+            mi = bend_moment / (width * (eff_height ** 2) * f_cd)  # [-]
 
-            mi_lim = 0.374  # [-]
             if mi > mi_lim:
                 print("Error!")
 
             alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi))  # [-]
 
-            required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [cm^2]
+            required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [m^2]
 
         else:
+            fl_height = float(self.el_data['b_fl_th_lineEdit']) / 100  # [m]
+            fl_width = float(self.el_data['b_fl_width_lineEdit']) / 100  # [m]
+
             # Calculations for span section
-            pass
+            mi = bend_moment / (fl_width * f_cd * (eff_height ** 2))
+
+            if mi > mi_lim:
+                print("Error!")
+
+            eta = 1.0
+
+            lbda_x = ((eta - sqrt((eta ** 2) - 2 * eta * mi)) / eta) * eff_height  # [m]
+
+            # Check if the 'T' section is real or apparent
+            if lbda_x < fl_height:  # apparent 'T' section
+                alpha_1 = eta - sqrt((eta ** 2) - 2 * eta * mi)
+
+                required_area = alpha_1 * fl_width * eff_height * (f_cd / f_yd)  # [m^2]
+
+            else:   # real 'T' section
+                bend_moment_1 = fl_height * (fl_width - width) * (eff_height - 0.5 * fl_height) * eta * f_cd  # [kNm]
+                bend_moment_2 = bend_moment - bend_moment_1  # [kNm]
+
+                mi = bend_moment_2 / (width * f_cd * eff_height ** 2)
+
+                required_area_1 = bend_moment_1 / ((eff_height - 0.5 * fl_height) * f_yd)  # [m^2]
+                required_area_2 = (eta - sqrt((eta ** 2) - 2 * eta * mi)) * width * eff_height * (f_cd / f_yd)  # [m^2]
+
+                required_area = required_area_1 + required_area_2  # [m^2]
 
         # Find provided area of reinforcement and amount of bars
         provided_area, provided_bars = self.get_provided_reinforcement(required_area=required_area,
@@ -99,7 +127,7 @@ class Element:
                                                                        stirrup_diam=stirrup_diam,
                                                                        width=width,
                                                                        cover=nom_cover)
-        return provided_area, provided_bars, required_area
+        return provided_area, provided_bars, required_area  # [m^2, -, m^2]
 
     def calc_column(self):
         pass
@@ -135,3 +163,4 @@ class Element:
 if __name__ == '__main__':
     test_path = '../tests/beam_support_example.rcalc'
     rc_element = Element(test_path)
+    print(rc_element.calc_reinforcement())
