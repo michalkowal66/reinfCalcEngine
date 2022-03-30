@@ -49,37 +49,43 @@ class Element:
         concrete_prop, steel_prop = self.get_material_properties()
 
         # Concrete
-        f_ck = concrete_prop['fck'] # [MPa]
-        f_cd = f_ck / 1.4 # [MPa]
+        f_ck = concrete_prop['fck']  # [MPa]
+        f_cd = f_ck / 1.4  # [MPa]
+        f_ctm = concrete_prop['fctm']  # [MPa]
 
         # Steel
-        f_yd = steel_prop['fyd'] # MPa
-        bar_diam = float(self.el_data['b_bar_diam_combo']) / 10 # [cm]
-        stirrup_diam = 0.8 # [cm]
+        f_yd = steel_prop['fyd']  # MPa
+        f_yk = steel_prop['fyk']  # MPa
+        bar_diam = float(self.el_data['b_bar_diam_combo']) / 10  # [cm]
+        stirrup_diam = 0.8  # [cm]
 
         # Geometry
-        height = float(self.el_data['b_height_lineEdit']) # [cm]
-        width = float(self.el_data['b_width_lineEdit']) # [cm]
-        nom_cover = float(self.el_data['b_concr_cover_lineEdit']) # [cm]
+        height = float(self.el_data['b_height_lineEdit'])  # [cm]
+        width = float(self.el_data['b_width_lineEdit'])  # [cm]
+        nom_cover = float(self.el_data['b_concr_cover_lineEdit'])  # [cm]
 
         # Load
-        bend_moment = float(self.el_data['b_moment_lineEdit']) # [kNm]
+        bend_moment = float(self.el_data['b_moment_lineEdit'])  # [kNm]
 
         # Effective height calculation
-        eff_height = height - (nom_cover + stirrup_diam + 0.5 * bar_diam) # [cm]
+        eff_height = height - (nom_cover + stirrup_diam + 0.5 * bar_diam)  # [cm]
+
+        # Min. and max. reinforcement area
+        min_area = max((0.26 * (f_ctm / f_yk) * width * eff_height), (0.0013 * width * eff_height))
+        max_area = 0.04 * width * height
 
         # check whether beam section is in support or span area
         if self.el_data['b_sup_section_radioBtn']:
             # Calculations for support section
-            mi = bend_moment / (width / 100 * ((eff_height / 100) ** 2) * f_cd * 1000) # [-]
+            mi = bend_moment / (width / 100 * ((eff_height / 100) ** 2) * f_cd * 1000)  # [-]
 
-            mi_lim = 0.374 # [-]
+            mi_lim = 0.374  # [-]
             if mi > mi_lim:
                 print("Error!")
 
-            alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi)) # [-]
+            alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi))  # [-]
 
-            required_area = alpha_1 * width * eff_height * (f_cd / f_yd) # [cm^2]
+            required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [cm^2]
 
         else:
             # Calculations for span section
@@ -87,6 +93,8 @@ class Element:
 
         # Find provided area of reinforcement and amount of bars
         provided_area, provided_bars = self.get_provided_reinforcement(required_area=required_area,
+                                                                       min_area=min_area,
+                                                                       max_area=max_area,
                                                                        bar_diam=bar_diam,
                                                                        stirrup_diam=stirrup_diam,
                                                                        width=width,
@@ -102,24 +110,24 @@ class Element:
     def calc_plate(self):
         pass
 
-    def get_provided_reinforcement(self, required_area, bar_diam, stirrup_diam, width, cover):
+    def get_provided_reinforcement(self, required_area, min_area, max_area, bar_diam, stirrup_diam, width, cover):
         # Minimum bars required
         min_bars = 2
 
         # Calculate left width of the element
-        width_left = width - 4*cover - 2*stirrup_diam - min_bars*bar_diam
+        width_left = width - 4 * cover - 2 * stirrup_diam - min_bars * bar_diam
 
         # Calculate number of additional bars that can fit inside the left width
-        add_bars = ceil(width_left/(cover+bar_diam))
-        if width_left - add_bars*(cover+bar_diam) >= bar_diam:
+        add_bars = ceil(width_left / (cover + bar_diam))
+        if width_left - add_bars * (cover + bar_diam) >= bar_diam:
             max_bars = min_bars + add_bars
         else:
             max_bars = min_bars + add_bars - 1
 
         # Find amount of bars needed to fulfill the required reinforcement condition
-        for provided_bars in range(min_bars, max_bars+1):
-            provided_area = provided_bars * pi * (bar_diam/2)**2
-            if provided_area >= required_area:
+        for provided_bars in range(min_bars, max_bars + 1):
+            provided_area = provided_bars * pi * (bar_diam / 2) ** 2
+            if provided_area >= required_area and min_area <= provided_area <= max_area:
                 return provided_area, provided_bars
         return None, None
 
