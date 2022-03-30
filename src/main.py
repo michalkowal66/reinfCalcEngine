@@ -1,4 +1,5 @@
 from json import load
+from math import ceil, pi
 from materialProperties.properties import properties
 
 class Element():
@@ -50,8 +51,26 @@ class Element():
     def calc_plate(self):
         pass
 
-    def get_provided_reinforcement(self, required_area, fi, fi_s, width, cover):
-        pass
+    def get_provided_reinforcement(self, required_area, bar_diam, stirrup_diam, width, cover):
+        # Minimum bars required
+        min_bars = 2
+
+        # Calculate left width of the element
+        width_left = width - 4*cover - 2*stirrup_diam - min_bars*bar_diam
+
+        # Calculate number of additional bars that can fit inside the left width
+        add_bars = ceil(width_left/(cover+bar_diam))
+        if width_left - add_bars*(cover+bar_diam) >= bar_diam:
+            max_bars = min_bars + add_bars
+        else:
+            max_bars = min_bars + add_bars - 1
+
+        # Find amount of bars needed to fulfill the required reinforcement condition
+        for provided_bars in range(min_bars, max_bars+1):
+            provided_area = provided_bars * pi * (bar_diam/2)**2
+            if provided_area >= required_area:
+                return provided_area, provided_bars
+        return None, None
 
 
 if __name__ == '__main__':
