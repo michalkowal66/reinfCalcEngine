@@ -1,5 +1,5 @@
 from json import load
-
+from materialProperties.properties import properties
 
 class Element():
     def __init__(self, path):
@@ -29,7 +29,11 @@ class Element():
                 self.calc_plate()
 
     def get_material_properties(self):
-        pass
+        element_code = self.el_type[0]
+        concrete_properties = properties['concrete_class'][self.el_data[f'{element_code}_concr_class_combo'].replace('/', '_')].value
+        steel_properties = properties['steel_grade'][self.el_data[f'{element_code}_steel_grade_combo']].value
+
+        return (concrete_properties, steel_properties)
 
     def validate_data(self, data_dict):
         pass
