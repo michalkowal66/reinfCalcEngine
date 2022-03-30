@@ -49,37 +49,37 @@ class Element:
         concrete_prop, steel_prop = self.get_material_properties()
 
         # Concrete
-        f_ck = concrete_prop['fck']
-        f_cd = f_ck / 1.4
+        f_ck = concrete_prop['fck'] # [MPa]
+        f_cd = f_ck / 1.4 # [MPa]
 
         # Steel
-        f_yd = steel_prop['fyd']
-        bar_diam = float(self.el_data['b_bar_diam_combo']) / 10
-        stirrup_diam = 0.8
+        f_yd = steel_prop['fyd'] # MPa
+        bar_diam = float(self.el_data['b_bar_diam_combo']) / 10 # [cm]
+        stirrup_diam = 0.8 # [cm]
 
         # Geometry
-        h = float(self.el_data['b_height_lineEdit'])
-        width = float(self.el_data['b_width_lineEdit'])
-        nom_cover = float(self.el_data['b_concr_cover_lineEdit'])
+        height = float(self.el_data['b_height_lineEdit']) # [cm]
+        width = float(self.el_data['b_width_lineEdit']) # [cm]
+        nom_cover = float(self.el_data['b_concr_cover_lineEdit']) # [cm]
 
         # Load
-        bend_moment = float(self.el_data['b_moment_lineEdit'])
+        bend_moment = float(self.el_data['b_moment_lineEdit']) # [kNm]
 
-        # Effective width calculation
-        d = h - (nom_cover + stirrup_diam + 0.5 * bar_diam)
+        # Effective height calculation
+        eff_height = height - (nom_cover + stirrup_diam + 0.5 * bar_diam) # [cm]
 
         # check whether beam section is in support or span area
         if self.el_data['b_sup_section_radioBtn']:
             # Calculations for support section
-            mi = bend_moment / (width / 100 * ((d / 100) ** 2) * f_cd * 1000)
+            mi = bend_moment / (width / 100 * ((eff_height / 100) ** 2) * f_cd * 1000) # [-]
 
-            mi_lim = 0.374
+            mi_lim = 0.374 # [-]
             if mi > mi_lim:
                 print("Error!")
 
-            alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi))
+            alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi)) # [-]
 
-            required_area = alpha_1 * width * d * (f_cd / f_yd)
+            required_area = alpha_1 * width * eff_height * (f_cd / f_yd) # [cm^2]
 
         else:
             # Calculations for span section
