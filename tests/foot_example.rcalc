@@ -1,0 +1,21 @@
+{
+    "element": "foot_tab",
+    "data": {
+        "f_fwidth_lineEdit": "235",
+        "f_concr_cover_lineEdit": "5",
+        "f_flength_lineEdit": "235",
+        "f_cheight_lineEdit": "35",
+        "f_cwidth_lineEdit": "35",
+        "f_fheight_lineEdit": "70",
+        "f_vert_lineEdit": "2204",
+        "f_bar_diam_combo": "20",
+        "f_exp_combo": "XC2",
+        "f_steel_grade_combo": "RB500W",
+        "f_concr_class_combo": "C25/30",
+        "f_col_bar_diam_combo": "16"
+    },
+    "info": {
+        "f_info_textBrowser": "",
+        "f_results_textBrowser": ""
+    }
+}

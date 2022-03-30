@@ -1,0 +1,18 @@
+{
+    "element": "col_tab",
+    "data": {
+        "c_concr_cover_lineEdit": "5",
+        "c_height_lineEdit": "35",
+        "c_width_lineEdit": "35",
+        "c_moment_lineEdit": "45",
+        "c_vertical_lineEdit": "2200",
+        "c_bar_diam_combo": "12",
+        "c_exp_combo": "XC1",
+        "c_steel_grade_combo": "RB500W",
+        "c_concr_class_combo": "C25/30"
+    },
+    "info": {
+        "c_info_textBrowser": "",
+        "c_results_textBrowser": ""
+    }
+}

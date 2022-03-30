@@ -1,0 +1,21 @@
+{
+    "element": "beam_tab",
+    "data": {
+        "b_height_lineEdit": "50",
+        "b_concr_cover_lineEdit": "3",
+        "b_width_lineEdit": "35",
+        "b_fl_th_lineEdit": "",
+        "b_fl_width_lineEdit": "",
+        "b_moment_lineEdit": "186.5",
+        "b_bar_diam_combo": "20",
+        "b_exp_combo": "XC1",
+        "b_steel_grade_combo": "RB500W",
+        "b_concr_class_combo": "C25/30",
+        "b_span_section_radioBtn": false,
+        "b_sup_section_radioBtn": true
+    },
+    "info": {
+        "b_info_textBrowser": "",
+        "b_results_textBrowser": ""
+    }
+}
