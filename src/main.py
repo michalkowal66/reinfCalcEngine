@@ -2,7 +2,8 @@ from json import load
 from math import ceil, pi, sqrt
 from materialProperties.properties import properties
 
-class Element():
+
+class Element:
     def __init__(self, path):
         self.path = path
         file_dict = self.load_savefile(self.path)
@@ -31,10 +32,14 @@ class Element():
 
     def get_material_properties(self):
         element_code = self.el_type[0]
-        concrete_properties = properties['concrete_class'][self.el_data[f'{element_code}_concr_class_combo'].replace('/', '_')].value
-        steel_properties = properties['steel_grade'][self.el_data[f'{element_code}_steel_grade_combo']].value
 
-        return (concrete_properties, steel_properties)
+        element_concrete_class = self.el_data[f'{element_code}_concr_class_combo'].replace('/', '_')
+        concrete_properties = properties['concrete_class'][element_concrete_class].value
+
+        element_steel_grade = self.el_data[f'{element_code}_steel_grade_combo']
+        steel_properties = properties['steel_grade'][element_steel_grade].value
+
+        return concrete_properties, steel_properties
 
     def validate_data(self, data_dict):
         pass
