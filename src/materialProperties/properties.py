@@ -102,13 +102,13 @@ class RebarGrade(Enum):
     - fyd: design yield strength of steel grade
     """
     A_20G2VY = {
-        "steel_grade": "20G2VY", "fyd": 420
+        "steel_grade": "20G2VY", "fyd": 420, "fyk": 490
     }
     RB500 = {
-        "steel_grade": "RB500", "fyd": 420
+        "steel_grade": "RB500", "fyd": 420, "fyk": 500
     }
     RB500W = {
-        "steel_grade": "RB500W", "fyd": 420
+        "steel_grade": "RB500W", "fyd": 420, "fyk": 500
     }
 
 
@@ -139,7 +139,8 @@ translate = {
     "fctk_0.95": "95% fractile tensile strength [MPa]",
     "Ecm": "Elastic modulus [GPa]",
     "steel_grade": "Steel grade",
-    "fyd": "Design yield strength [MPa]"
+    "fyd": "Design yield strength [MPa]",
+    "fyk": "Characteristic yield strength [MPa]"
 }
 """dict: Dictionary with elaborated keys of property classes
 """
