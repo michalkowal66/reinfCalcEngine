@@ -120,13 +120,13 @@ class Element:
                 required_area = required_area_1 + required_area_2  # [m^2]
 
         # Find provided area of reinforcement and amount of bars
-        provided_area, provided_bars = self.get_provided_reinforcement(required_area=required_area,
-                                                                       min_area=min_area,
-                                                                       max_area=max_area,
-                                                                       bar_diam=bar_diam,
-                                                                       stirrup_diam=stirrup_diam,
-                                                                       width=width,
-                                                                       cover=nom_cover)
+        provided_area, provided_bars = self.get_beam_reinforcement(required_area=required_area,
+                                                                    min_area=min_area,
+                                                                    max_area=max_area,
+                                                                    bar_diam=bar_diam,
+                                                                    stirrup_diam=stirrup_diam,
+                                                                    width=width,
+                                                                    cover=nom_cover)
         return provided_area, provided_bars, required_area  # [m^2, -, m^2]
 
     def calc_column(self):
@@ -192,26 +192,100 @@ class Element:
         if required_area_1 + required_area_2 >= min_area:
             min_area = 0
 
-        provided_area_1, provided_bars_1 = self.get_provided_reinforcement(required_area=required_area_1,
-                                                                           min_area=min_area / 2,
-                                                                           max_area=max_area / 2,
-                                                                           bar_diam=bar_diam,
-                                                                           stirrup_diam=stirrup_diam,
-                                                                           width=width,
-                                                                           cover=nom_cover)
+        provided_area_1, provided_bars_1 = self.get_beam_reinforcement(required_area=required_area_1,
+                                                                        min_area=min_area / 2,
+                                                                        max_area=max_area / 2,
+                                                                        bar_diam=bar_diam,
+                                                                        stirrup_diam=stirrup_diam,
+                                                                        width=width,
+                                                                        cover=nom_cover)
 
-        provided_area_2, provided_bars_2 = self.get_provided_reinforcement(required_area=required_area_2,
-                                                                           min_area=min_area / 2,
-                                                                           max_area=max_area / 2,
-                                                                           bar_diam=bar_diam,
-                                                                           stirrup_diam=stirrup_diam,
-                                                                           width=width,
-                                                                           cover=nom_cover)
+        provided_area_2, provided_bars_2 = self.get_beam_reinforcement(required_area=required_area_2,
+                                                                        min_area=min_area / 2,
+                                                                        max_area=max_area / 2,
+                                                                        bar_diam=bar_diam,
+                                                                        stirrup_diam=stirrup_diam,
+                                                                        width=width,
+                                                                        cover=nom_cover)
 
         return provided_area_1, provided_bars_1, provided_area_2, provided_bars_2
 
     def calc_foot(self):
-        pass
+        # Get material properties
+        concrete_prop, steel_prop = self.get_material_properties()
+
+        # Concrete
+        f_ck = concrete_prop['fck'] * 1000  # [kPa]
+        f_cd = f_ck / 1.4  # [kPa]
+        f_ctk = concrete_prop['fctk_0.05'] * 1000  # [kPa]
+        f_ctd = f_ctk / 1.4  # [kPa]
+
+        # Steel
+        f_yd = steel_prop['fyd'] * 1000  # [kPa]
+        f_yk = steel_prop['fyk'] * 1000  # [kPa]
+        bar_diam = float(self.el_data['f_bar_diam_combo']) / 1000  # [m]
+        col_bar_diam = float(self.el_data['f_col_bar_diam_combo']) / 1000  # [m]
+        stirrup_diam = 0.008  # [m]
+
+        # Geometry
+        height = float(self.el_data['f_fheight_lineEdit']) / 100  # [m]
+        width = float(self.el_data['f_fwidth_lineEdit']) / 100  # [m]
+        length = float(self.el_data['f_flength_lineEdit']) / 100  # [m]
+        nom_cover = float(self.el_data['f_concr_cover_lineEdit']) / 100  # [m]
+        c_height = float(self.el_data['f_cheight_lineEdit']) / 100  # [m]
+        c_width = float(self.el_data['f_cwidth_lineEdit']) / 100  # [m]
+
+        # Load
+        vert_force = float(self.el_data['f_vert_lineEdit'])  # [kN]
+
+        f_bd = 2.25 * f_ctd
+        required_anchorage = (col_bar_diam / 4) * (f_yd / f_bd)
+        min_anchorage = max(0.6 * required_anchorage, 10 * col_bar_diam, 0.1)
+        assumed_anchorage = max(min_anchorage, round(required_anchorage, 2))
+
+        ni_rd_max = 0.4 * 0.6 * (1 - (f_ck / 250000)) * f_cd
+
+        # Internal column
+        beta = 1.15
+
+        # Column's perimeter
+        u0 = 2 * (c_height + c_width)
+
+        # Minimum height and cover
+        h_min = (beta * vert_force) / (ni_rd_max * u0)
+        h_cover = assumed_anchorage + 1.5 * bar_diam
+        if height < h_min or height < h_cover:
+            print("Incorrect height")
+
+        area = width * length
+
+        # Stress calculation
+        sigma = vert_force / area
+
+        eff_length = 1 + 0.15 * c_width
+        bend_moment = sigma * length * ((eff_length ** 2) / 2)
+
+        # Effective height calculation
+        eff_height = height - nom_cover - 1.5 * bar_diam  # [m]
+
+        # Arm of internal forces
+        z = 0.9 * eff_height
+
+        # Min. and max. reinforcement area
+        # Make function to read coefficient from the graph - fig. 22.2 - [1]
+        min_area = 0.0014 * width * eff_height  # [m^2]
+        max_area = 0.04 * width * height  # [m^2]
+
+        total_required_area = bend_moment / (z * f_yd)  # [m^2]
+        required_area = total_required_area / length  # [m^2]
+
+        provided_area, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
+                                                                        min_area=min_area / length,
+                                                                        max_area=max_area / length,
+                                                                        bar_diam=bar_diam,
+                                                                        cover=nom_cover)
+
+        return provided_area, provided_spacing, required_area  # [m^2, -, m^2]
 
     def calc_plate(self):
         # Get material properties
@@ -252,17 +326,30 @@ class Element:
         alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi))  # [-]
         required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [m^2]
 
-        provided_area, provided_bars = self.get_provided_reinforcement(required_area=required_area,
-                                                                       min_area=min_area,
-                                                                       max_area=max_area,
-                                                                       bar_diam=bar_diam,
-                                                                       stirrup_diam=stirrup_diam,
-                                                                       width=width,
-                                                                       cover=nom_cover)
+        provided_area, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
+                                                                    min_area=min_area,
+                                                                    max_area=max_area,
+                                                                    bar_diam=bar_diam,
+                                                                    cover=nom_cover)
 
-        return provided_area, provided_bars, required_area  # [m^2, -, m^2]
+        return provided_area, provided_spacing, required_area  # [m^2, -, m^2]
 
-    def get_provided_reinforcement(self, required_area, min_area, max_area, bar_diam, stirrup_diam, width, cover):
+    def get_plate_reinforcement(self, required_area, min_area, max_area, bar_diam, cover):
+        # List containing typical bar axial spacing for plate reinforcement
+        axial_spacings = [0.3, 0.25, 0.22, 0.2, 0.19, 0.18, 0.17, 0.15, 0.15,
+                            0.14, 0.13, 0.125, 0.12, 0.11, 0.1, 0.08, 0.05]
+
+        bar_area = pi * (bar_diam / 2) ** 2
+
+        # Find spacing of bars needed to fulfill the required reinforcement conditions
+        for provided_spacing in axial_spacings:
+            if provided_spacing > bar_diam + cover:
+                provided_area = (1 / provided_spacing) * bar_area
+                if provided_area >= required_area and min_area <= provided_area <= max_area:
+                    return provided_area, provided_spacing
+        return None, None
+
+    def get_beam_reinforcement(self, required_area, min_area, max_area, bar_diam, stirrup_diam, width, cover):
         # Minimum bars required
         min_bars = 2
 
