@@ -214,7 +214,53 @@ class Element:
         pass
 
     def calc_plate(self):
-        pass
+        # Get material properties
+        concrete_prop, steel_prop = self.get_material_properties()
+
+        # Concrete
+        f_ck = concrete_prop['fck'] * 1000  # [kPa]
+        f_cd = f_ck / 1.4  # [kPa]
+        f_ctm = concrete_prop['fctm'] * 1000  # [kPa]
+
+        # Steel
+        f_yd = steel_prop['fyd'] * 1000  # [kPa]
+        f_yk = steel_prop['fyk'] * 1000  # [kPa]
+        bar_diam = float(self.el_data['p_bar_diam_combo']) / 1000  # [m]
+        stirrup_diam = 0.008  # [m]
+
+        # Geometry
+        height = float(self.el_data['p_th_lineEdit']) / 100  # [m]
+        width = 1  # [m]
+        nom_cover = float(self.el_data['p_concr_cover_lineEdit']) / 100  # [m]
+
+        # Load
+        bend_moment = float(self.el_data['p_moment_lineEdit'])  # [kNm]
+
+        # Effective height calculation
+        eff_height = height - (nom_cover + 0.5 * bar_diam)  # [m]
+
+        # Min. and max. reinforcement area
+        min_area = max((0.26 * (f_ctm / f_yk) * width * eff_height), (0.0013 * width * eff_height))  # [m^2]
+        max_area = 0.04 * width * height  # [m^2]
+
+        mi_lim = 0.374  # [-]
+
+        mi = bend_moment / (width * (eff_height ** 2) * f_cd)  # [-]
+        if mi > mi_lim:
+            print("Error!")
+
+        alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mi))  # [-]
+        required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [m^2]
+
+        provided_area, provided_bars = self.get_provided_reinforcement(required_area=required_area,
+                                                                       min_area=min_area,
+                                                                       max_area=max_area,
+                                                                       bar_diam=bar_diam,
+                                                                       stirrup_diam=stirrup_diam,
+                                                                       width=width,
+                                                                       cover=nom_cover)
+
+        return provided_area, provided_bars, required_area  # [m^2, -, m^2]
 
     def get_provided_reinforcement(self, required_area, min_area, max_area, bar_diam, stirrup_diam, width, cover):
         # Minimum bars required
@@ -239,6 +285,6 @@ class Element:
 
 
 if __name__ == '__main__':
-    test_path = '../tests/column_example.rcalc'
+    test_path = '../tests/plate_example.rcalc'
     rc_element = Element(test_path)
     print(rc_element.calc_reinforcement())
