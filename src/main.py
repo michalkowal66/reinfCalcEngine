@@ -108,7 +108,7 @@ class Element:
 
                 required_area = alpha_1 * fl_width * eff_height * (f_cd / f_yd)  # [m^2]
 
-            else:   # real 'T' section
+            else:  # real 'T' section
                 bend_moment_1 = fl_height * (fl_width - width) * (eff_height - 0.5 * fl_height) * eta * f_cd  # [kNm]
                 bend_moment_2 = bend_moment - bend_moment_1  # [kNm]
 
@@ -130,7 +130,85 @@ class Element:
         return provided_area, provided_bars, required_area  # [m^2, -, m^2]
 
     def calc_column(self):
-        pass
+        # Get material properties
+        concrete_prop, steel_prop = self.get_material_properties()
+
+        # Concrete
+        f_ck = concrete_prop['fck'] * 1000  # [kPa]
+        f_cd = f_ck / 1.4  # [kPa]
+
+        # Steel
+        f_yd = steel_prop['fyd'] * 1000  # [kPa]
+        bar_diam = float(self.el_data['c_bar_diam_combo']) / 1000  # [m]
+        stirrup_diam = 0.008  # [m]
+
+        # Geometry
+        height = float(self.el_data['c_height_lineEdit']) / 100  # [m],
+        width = float(self.el_data['c_width_lineEdit']) / 100  # [m]
+        nom_cover = float(self.el_data['c_concr_cover_lineEdit']) / 100  # [m]
+
+        # Load
+        bend_moment = float(self.el_data['c_moment_lineEdit'])  # [kNm]
+        vert_force = float(self.el_data['c_vertical_lineEdit'])  # [kN]
+
+        eccentricity = max(height / 30, 0.02)
+        if bend_moment < vert_force * eccentricity:
+            bend_moment = vert_force * eccentricity
+
+        a = (nom_cover + 0.5 * bar_diam + stirrup_diam)
+        eff_height = height - a
+        delta = a / eff_height
+
+        s = width * eff_height * f_cd
+
+        n_ed = vert_force / s
+        m_ed = bend_moment / (s * eff_height)
+        m_ed_1 = m_ed + 0.5 * n_ed * (1 - delta)
+
+        alpha_1_2_min = max(0.002 * (1 + delta) * (f_yd / f_cd), 0.1 * n_ed)
+
+        alpha_1_min = 0.5 * alpha_1_2_min
+        alpha_2_min = alpha_1_min
+
+        alpha_2 = (m_ed_1 - 0.371) / (1 - delta)
+        if alpha_2 >= alpha_2_min:
+            alpha_1 = max(0.5 - n_ed + alpha_2, alpha_1_min)
+
+        elif alpha_2 < alpha_2_min:
+            alpha_2 = alpha_2_min
+
+            root_expr = 0.947 - 1.95 * m_ed_1
+            if root_expr >= 0:
+                alpha_1 = max(0.973 - n_ed - sqrt(root_expr), alpha_1_min)
+            else:
+                alpha_1 = alpha_1_min
+
+        min_area = max((0.1 * vert_force) / f_yd, (0.002 * width * height))  # [m^2]
+        max_area = 0.04 * width * height  # [m^2]
+
+        required_area_1 = alpha_1 * (s / f_yd)
+        required_area_2 = alpha_2 * (s / f_yd)
+
+        if required_area_1 + required_area_2 >= min_area:
+            min_area = 0
+
+        provided_area_1, provided_bars_1 = self.get_provided_reinforcement(required_area=required_area_1,
+                                                                           min_area=min_area / 2,
+                                                                           max_area=max_area / 2,
+                                                                           bar_diam=bar_diam,
+                                                                           stirrup_diam=stirrup_diam,
+                                                                           width=width,
+                                                                           cover=nom_cover)
+
+        provided_area_2, provided_bars_2 = self.get_provided_reinforcement(required_area=required_area_2,
+                                                                           min_area=min_area / 2,
+                                                                           max_area=max_area / 2,
+                                                                           bar_diam=bar_diam,
+                                                                           stirrup_diam=stirrup_diam,
+                                                                           width=width,
+                                                                           cover=nom_cover)
+
+        return provided_area_1, provided_bars_1, provided_area_2, provided_bars_2
 
     def calc_foot(self):
         pass
@@ -161,6 +239,6 @@ class Element:
 
 
 if __name__ == '__main__':
-    test_path = '../tests/beam_support_example.rcalc'
+    test_path = '../tests/column_example.rcalc'
     rc_element = Element(test_path)
     print(rc_element.calc_reinforcement())
