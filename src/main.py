@@ -436,6 +436,7 @@ class Foot(Element):
 
 
 if __name__ == '__main__':
-    test_path = '../tests/plate_example.rcalc'
-    rc_element = Element(test_path)
+    path = '../tests/foot_example.rcalc'
+    rc_element = Foot(path=path)
+    print(rc_element.valid)
     print(rc_element.calc_reinforcement())
