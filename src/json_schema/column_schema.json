@@ -1,0 +1,71 @@
+{
+	"type": "object",
+	"properties": {
+		"element": {
+			"type": "string"
+		},
+		"data": {
+			"type": "object",
+			"properties": {
+				"c_concr_cover_lineEdit": {
+					"type": "number"
+				},
+				"c_height_lineEdit": {
+					"type": "number"
+				},
+				"c_width_lineEdit": {
+					"type": "number"
+				},
+				"c_moment_lineEdit": {
+					"type": "number"
+				},
+				"c_vertical_lineEdit": {
+					"type": "number"
+				},
+				"c_bar_diam_combo": {
+					"type": "string"
+				},
+				"c_exp_combo": {
+					"type": "string"
+				},
+				"c_steel_grade_combo": {
+					"type": "string"
+				},
+				"c_concr_class_combo": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"c_concr_cover_lineEdit",
+				"c_height_lineEdit",
+				"c_width_lineEdit",
+				"c_moment_lineEdit",
+				"c_vertical_lineEdit",
+				"c_bar_diam_combo",
+				"c_exp_combo",
+				"c_steel_grade_combo",
+				"c_concr_class_combo"
+			]
+		},
+		"info": {
+			"type": "object",
+			"properties": {
+				"c_info_textBrowser": {
+					"type": "string"
+				},
+				"c_results_textBrowser": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"c_info_textBrowser",
+				"c_results_textBrowser"
+			]
+		}
+	},
+	"required": [
+		"element",
+		"data",
+		"info"
+	]
+}

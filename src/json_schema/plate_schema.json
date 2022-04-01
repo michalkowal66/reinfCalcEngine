@@ -1,0 +1,71 @@
+{
+	"type": "object",
+	"properties": {
+		"element": {
+			"type": "string"
+		},
+		"data": {
+			"type": "object",
+			"properties": {
+				"p_concr_cover_lineEdit": {
+					"type": "number"
+				},
+				"p_th_lineEdit": {
+					"type": "number"
+				},
+				"p_moment_lineEdit": {
+					"type": "number"
+				},
+				"p_concr_class_combo": {
+					"type": "string"
+				},
+				"p_steel_grade_combo": {
+					"type": "string"
+				},
+				"p_bar_diam_combo": {
+					"type": "string"
+				},
+				"p_exp_combo": {
+					"type": "string"
+				},
+				"p_span_section_radioBtn": {
+					"type": "boolean"
+				},
+				"p_sup_section_radioBtn": {
+					"type": "boolean"
+				}
+			},
+			"required": [
+				"p_concr_cover_lineEdit",
+				"p_th_lineEdit",
+				"p_moment_lineEdit",
+				"p_concr_class_combo",
+				"p_steel_grade_combo",
+				"p_bar_diam_combo",
+				"p_exp_combo",
+				"p_span_section_radioBtn",
+				"p_sup_section_radioBtn"
+			]
+		},
+		"info": {
+			"type": "object",
+			"properties": {
+				"p_info_textBrowser": {
+					"type": "string"
+				},
+				"p_results_textBrowser": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"p_info_textBrowser",
+				"p_results_textBrowser"
+			]
+		}
+	},
+	"required": [
+		"element",
+		"data",
+		"info"
+	]
+}
