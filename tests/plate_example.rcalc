@@ -1,9 +1,9 @@
 {
     "element": "plate_tab",
     "data": {
-        "p_concr_cover_lineEdit": "2.5",
-        "p_th_lineEdit": "16",
-        "p_moment_lineEdit": "31.86",
+        "p_concr_cover_lineEdit": 2.5,
+        "p_th_lineEdit": 16.0,
+        "p_moment_lineEdit": 31.86,
         "p_concr_class_combo": "C25/30",
         "p_steel_grade_combo": "RB500W",
         "p_bar_diam_combo": "10",

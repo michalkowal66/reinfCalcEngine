@@ -1,12 +1,12 @@
 {
     "element": "beam_tab",
     "data": {
-        "b_height_lineEdit": "50",
-        "b_concr_cover_lineEdit": "3",
-        "b_width_lineEdit": "35",
-        "b_fl_th_lineEdit": "16",
-        "b_fl_width_lineEdit": "250",
-        "b_moment_lineEdit": "128.7",
+        "b_height_lineEdit": 50.0,
+        "b_concr_cover_lineEdit": 3.0,
+        "b_width_lineEdit": 35.0,
+        "b_fl_th_lineEdit": 16.0,
+        "b_fl_width_lineEdit": 250.0,
+        "b_moment_lineEdit": 128.7,
         "b_bar_diam_combo": "20",
         "b_exp_combo": "XC1",
         "b_steel_grade_combo": "RB500W",
