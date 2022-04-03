@@ -12,7 +12,7 @@ class Element:
 
         self.element_type = self.data_dict['element'][:-4]
         self.parameters = self.data_dict['data']
-        self.informations = self.data_dict['info']
+        self.information = self.data_dict['info']
 
         self.validation_schema = self.load_schema()
         self.valid = self.validate_data(data_dict=self.data_dict, validation_schema=self.validation_schema)
@@ -409,7 +409,7 @@ class Foot(Element):
         # Stress calculation
         sigma = vert_force / area
 
-        eff_length = 1 + 0.15 * c_width
+        eff_length = (width - c_width) / 2 + 0.15 * c_width
         bend_moment = sigma * length * ((eff_length ** 2) / 2)
 
         # Effective height calculation
@@ -420,19 +420,46 @@ class Foot(Element):
 
         # Min. and max. reinforcement area
         # Make function to read coefficient from the graph - fig. 22.2 - [1]
-        min_area = 0.0014 * width * eff_height  # [m^2]
-        max_area = 0.04 * width * height  # [m^2]
+        min_area = 0.0014 * length * eff_height  # [m^2]
+        max_area = 0.04 * length * height  # [m^2]
 
         total_required_area = bend_moment / (z * f_yd)  # [m^2]
         required_area = total_required_area / length  # [m^2]
 
-        provided_area, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
-                                                                       min_area=min_area / length,
-                                                                       max_area=max_area / length,
-                                                                       bar_diam=bar_diam,
-                                                                       cover=nom_cover)
+        provided_area_per_rm, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
+                                                                              min_area=min_area / length,
+                                                                              max_area=max_area / length,
+                                                                              bar_diam=bar_diam,
+                                                                              cover=nom_cover)
 
-        return provided_area, provided_spacing, required_area  # [m^2, m, m^2]
+        provided_area = provided_area_per_rm * length
+
+        # Punching verification
+        ni_ed = vert_force / (u0 * eff_height)
+
+        if ni_ed > ni_rd_max:
+            print("EC requirement not fulfilled.")
+
+        # Read from graph - fig. 16.14 - [1]:
+        a_coeff = 1.15
+
+        a = a_coeff * c_width
+
+        rho_l = provided_area / (length * eff_height)
+        k = min(1 + sqrt(200 / (eff_height * 1000)), 2)
+        ni_min = 0.035 * (k ** (1.5)) * sqrt(f_ck * 1000)
+
+        ni_rd = max(0.128 * k * (100 * rho_l * ((f_ck)) ** (1 / 3)), ni_min) * 2 * eff_height / a
+
+        u = 4 * c_width + 2 * c_height + 2 * pi * a
+
+        vert_force_red = vert_force - sigma * (c_width * c_height + 2 * a * (c_width + c_height) + pi * a ** 2)
+        ni_ed_red = vert_force_red / (u * eff_height)
+
+        if ni_ed_red > ni_rd:
+            print("EC requirement not fulfilled.")
+
+        return provided_area_per_rm, provided_spacing, required_area  # [m^2, m, m^2]
 
 
 if __name__ == '__main__':
