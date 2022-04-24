@@ -1,5 +1,5 @@
 {
-    "element": "col_tab",
+    "element": "column_tab",
     "data": {
         "c_concr_cover_lineEdit": 5.0,
         "c_height_lineEdit": 40.0,
