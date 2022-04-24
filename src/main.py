@@ -136,7 +136,7 @@ class Plate(Element):
                 remarks.append("Mu value correct, continuing calculations...")
 
                 alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mu))  # [-]
-                required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [m^2]
+                required_area = max(alpha_1 * width * eff_height * (f_cd / f_yd), min_area)  # [m^2]
 
                 provided_area, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
                                                                                min_area=min_area,
@@ -145,7 +145,9 @@ class Plate(Element):
                                                                                cover=nom_cover)
 
         remarks.append("Calculations finished.")
+
         variables = locals()
+        variables['self'] = self.__str__()
 
         calculation_results = {
             'provided_area': [provided_area],
@@ -159,7 +161,7 @@ class Plate(Element):
             'parameters': variables
         }
 
-    def __repr__(self):
+    def __str__(self):
         return f"RC Plate, {self.height}cm thick"
 
 
@@ -290,6 +292,7 @@ class Beam(Element):
         remarks.append("Calculations finished.")
 
         variables = locals()
+        variables['self'] = self.__str__()
 
         calculation_results = {
             'provided_area': [provided_area],
@@ -303,7 +306,7 @@ class Beam(Element):
             'parameters': variables
         }
 
-    def __repr__(self):
+    def __str__(self):
         return f"RC Beam, {self.height}cm x {self.width}cm"
 
 class Column(Element):
@@ -415,6 +418,7 @@ class Column(Element):
         remarks.append("Calculations finished.")
 
         variables = locals()
+        variables['self'] = self.__str__()
 
         calculation_results = {
             'provided_area': [provided_area_1, provided_area_2],
@@ -428,7 +432,7 @@ class Column(Element):
             'parameters': variables
         }
 
-    def __repr__(self):
+    def __str__(self):
         return f"RC Column, {self.height}cm x {self.width}cm"
 
 
@@ -527,7 +531,7 @@ class Foot(Element):
                 max_area = 0.04 * length * height  # [m^2]
 
                 total_required_area = bend_moment / (z * f_yd)  # [m^2]
-                required_area = total_required_area / length  # [m^2]
+                required_area = max(total_required_area, min_area) / length  # [m^2]
 
                 provided_area_per_rm, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
                                                                                       min_area=min_area / length,
@@ -576,6 +580,7 @@ class Foot(Element):
         remarks.append("Calculations finished.")
 
         variables = locals()
+        variables['self'] = self.__str__()
 
         calculation_results = {
             'provided_area': [provided_area],
@@ -589,7 +594,7 @@ class Foot(Element):
             'parameters': variables
         }
 
-    def __repr__(self):
+    def __str__(self):
         return f"RC Foundation Foot, {self.length}cm x {self.width}cm, {self.height}cm high"
 
 
@@ -606,4 +611,5 @@ if __name__ == '__main__':
         element_parameters = load(json_dict)
     rc_element = Foot(element_parameters)
     print(rc_element.valid)
-    print(rc_element.calc_reinforcement())
+    results = rc_element.calc_reinforcement()
+    print(results)
