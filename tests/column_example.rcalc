@@ -10,9 +10,5 @@
         "c_exp_combo": "XC1",
         "c_steel_grade_combo": "RB500W",
         "c_concr_class_combo": "C25/30"
-    },
-    "info": {
-        "c_info_textBrowser": "",
-        "c_results_textBrowser": ""
     }
 }

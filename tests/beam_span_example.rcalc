@@ -13,9 +13,5 @@
         "b_concr_class_combo": "C25/30",
         "b_span_section_radioBtn": true,
         "b_sup_section_radioBtn": false
-    },
-    "info": {
-        "b_info_textBrowser": "",
-        "b_results_textBrowser": ""
     }
 }

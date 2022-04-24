@@ -1,83 +1,67 @@
 {
-	"type": "object",
-	"properties": {
-		"element": {
-			"type": "string"
-		},
-		"data": {
-			"type": "object",
-			"properties": {
-				"f_fwidth_lineEdit": {
-					"type": "number"
-				},
-				"f_concr_cover_lineEdit": {
-					"type": "number"
-				},
-				"f_flength_lineEdit": {
-					"type": "number"
-				},
-				"f_cheight_lineEdit": {
-					"type": "number"
-				},
-				"f_cwidth_lineEdit": {
-					"type": "number"
-				},
-				"f_fheight_lineEdit": {
-					"type": "number"
-				},
-				"f_vert_lineEdit": {
-					"type": "number"
-				},
-				"f_bar_diam_combo": {
-					"type": "string"
-				},
-				"f_exp_combo": {
-					"type": "string"
-				},
-				"f_steel_grade_combo": {
-					"type": "string"
-				},
-				"f_concr_class_combo": {
-					"type": "string"
-				},
-				"f_col_bar_diam_combo": {
-					"type": "string"
-				}
-			},
-			"required": [
-				"f_fwidth_lineEdit",
-				"f_concr_cover_lineEdit",
-				"f_flength_lineEdit",
-				"f_cheight_lineEdit",
-				"f_cwidth_lineEdit",
-				"f_fheight_lineEdit",
-				"f_vert_lineEdit",
-				"f_bar_diam_combo",
-				"f_exp_combo",
-				"f_steel_grade_combo",
-				"f_concr_class_combo",
-				"f_col_bar_diam_combo"
-			]
-		},
-		"info": {
-			"type": "object",
-			"properties": {
-				"f_info_textBrowser": {
-					"type": "string"
-				},
-				"f_results_textBrowser": {
-					"type": "string"
-				}
-			},
-			"required": [
-				"f_info_textBrowser",
-				"f_results_textBrowser"
-			]
-		}
-	},
-	"required": [
-		"element",
-		"data",
-		"info"
-	]
+    "type": "object",
+    "properties": {
+        "element": {
+            "type": "string"
+        },
+        "data": {
+            "type": "object",
+            "properties": {
+                "f_fwidth_lineEdit": {
+                    "type": "number"
+                },
+                "f_concr_cover_lineEdit": {
+                    "type": "number"
+                },
+                "f_flength_lineEdit": {
+                    "type": "number"
+                },
+                "f_cheight_lineEdit": {
+                    "type": "number"
+                },
+                "f_cwidth_lineEdit": {
+                    "type": "number"
+                },
+                "f_fheight_lineEdit": {
+                    "type": "number"
+                },
+                "f_vert_lineEdit": {
+                    "type": "number"
+                },
+                "f_bar_diam_combo": {
+                    "type": "string"
+                },
+                "f_exp_combo": {
+                    "type": "string"
+                },
+                "f_steel_grade_combo": {
+                    "type": "string"
+                },
+                "f_concr_class_combo": {
+                    "type": "string"
+                },
+                "f_col_bar_diam_combo": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "f_fwidth_lineEdit",
+                "f_concr_cover_lineEdit",
+                "f_flength_lineEdit",
+                "f_cheight_lineEdit",
+                "f_cwidth_lineEdit",
+                "f_fheight_lineEdit",
+                "f_vert_lineEdit",
+                "f_bar_diam_combo",
+                "f_exp_combo",
+                "f_steel_grade_combo",
+                "f_concr_class_combo",
+                "f_col_bar_diam_combo"
+            ]
+        }
+    },
+    "required": [
+        "element",
+        "data"
+    ]
 }

@@ -1,81 +1,59 @@
 {
-	"type": "object",
-	"properties": {
-		"element": {
-			"type": "string"
-		},
-		"data": {
-			"type": "object",
-			"properties": {
-				"b_height_lineEdit": {
-					"type": "number"
-				},
-				"b_concr_cover_lineEdit": {
-					"type": "number"
-				},
-				"b_width_lineEdit": {
-					"type": "number"
-				},
-				"b_fl_th_lineEdit": {
-					"type": "number"
-				},
-				"b_fl_width_lineEdit": {
-					"type": "number"
-				},
-				"b_moment_lineEdit": {
-					"type": "number"
-				},
-				"b_bar_diam_combo": {
-					"type": "string"
-				},
-				"b_exp_combo": {
-					"type": "string"
-				},
-				"b_steel_grade_combo": {
-					"type": "string"
-				},
-				"b_concr_class_combo": {
-					"type": "string"
-				},
-				"b_span_section_radioBtn": {
-					"type": "boolean"
-				},
-				"b_sup_section_radioBtn": {
-					"type": "boolean"
-				}
-			},
-			"required": [
-				"b_height_lineEdit",
-				"b_concr_cover_lineEdit",
-				"b_width_lineEdit",
-				"b_moment_lineEdit",
-				"b_bar_diam_combo",
-				"b_exp_combo",
-				"b_steel_grade_combo",
-				"b_concr_class_combo",
-				"b_span_section_radioBtn",
-				"b_sup_section_radioBtn"
-			]
-		},
-		"info": {
-			"type": "object",
-			"properties": {
-				"b_info_textBrowser": {
-					"type": "string"
-				},
-				"b_results_textBrowser": {
-					"type": "string"
-				}
-			},
-			"required": [
-				"b_info_textBrowser",
-				"b_results_textBrowser"
-			]
-		}
-	},
-	"required": [
-		"element",
-		"data",
-		"info"
-	]
+    "type": "object",
+    "properties": {
+        "element": {
+            "type": "string"
+        },
+        "data": {
+            "type": "object",
+            "properties": {
+                "b_height_lineEdit": {
+                    "type": "number"
+                },
+                "b_concr_cover_lineEdit": {
+                    "type": "number"
+                },
+                "b_width_lineEdit": {
+                    "type": "number"
+                },
+                "b_moment_lineEdit": {
+                    "type": "number"
+                },
+                "b_bar_diam_combo": {
+                    "type": "string"
+                },
+                "b_exp_combo": {
+                    "type": "string"
+                },
+                "b_steel_grade_combo": {
+                    "type": "string"
+                },
+                "b_concr_class_combo": {
+                    "type": "string"
+                },
+                "b_span_section_radioBtn": {
+                    "type": "boolean"
+                },
+                "b_sup_section_radioBtn": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "b_height_lineEdit",
+                "b_concr_cover_lineEdit",
+                "b_width_lineEdit",
+                "b_moment_lineEdit",
+                "b_bar_diam_combo",
+                "b_exp_combo",
+                "b_steel_grade_combo",
+                "b_concr_class_combo",
+                "b_span_section_radioBtn",
+                "b_sup_section_radioBtn"
+            ]
+        }
+    },
+    "required": [
+        "element",
+        "data"
+    ]
 }

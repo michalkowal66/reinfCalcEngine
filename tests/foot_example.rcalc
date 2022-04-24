@@ -13,9 +13,5 @@
         "f_steel_grade_combo": "RB500W",
         "f_concr_class_combo": "C25/30",
         "f_col_bar_diam_combo": "16"
-    },
-    "info": {
-        "f_info_textBrowser": "",
-        "f_results_textBrowser": ""
     }
 }

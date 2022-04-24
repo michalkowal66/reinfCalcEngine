@@ -12,7 +12,6 @@ class Element:
 
         self.element_type = self.data_dict['element'][:-4]
         self.parameters = self.data_dict['data']
-        self.information = self.data_dict['info']
 
         self.validation_schema = self.load_schema()
         self.valid = self.validate_data(data_dict=self.data_dict, validation_schema=self.validation_schema)

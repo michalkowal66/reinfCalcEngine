@@ -5,14 +5,10 @@
         "p_th_lineEdit": 16.0,
         "p_moment_lineEdit": 31.86,
         "p_concr_class_combo": "C25/30",
-        "p_steel_grade_combo": "RB500W",
+        "p_steel_grade_combo": "20G2VY",
         "p_bar_diam_combo": "10",
         "p_exp_combo": "XC1",
         "p_span_section_radioBtn": true,
         "p_sup_section_radioBtn": false
-    },
-    "info": {
-        "p_info_textBrowser": "",
-        "p_results_textBrowser": ""
     }
 }

@@ -31,7 +31,7 @@
 				"p_span_section_radioBtn": {
 					"type": "boolean"
 				},
-				"p_sup_section_radioBtn": {
+				"p_\nsup_section_radioBtn": {
 					"type": "boolean"
 				}
 			},
@@ -46,26 +46,10 @@
 				"p_span_section_radioBtn",
 				"p_sup_section_radioBtn"
 			]
-		},
-		"info": {
-			"type": "object",
-			"properties": {
-				"p_info_textBrowser": {
-					"type": "string"
-				},
-				"p_results_textBrowser": {
-					"type": "string"
-				}
-			},
-			"required": [
-				"p_info_textBrowser",
-				"p_results_textBrowser"
-			]
 		}
 	},
 	"required": [
 		"element",
-		"data",
-		"info"
+		"data"
 	]
 }
