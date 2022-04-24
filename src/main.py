@@ -6,20 +6,14 @@ from jsonschema.exceptions import ValidationError
 
 
 class Element:
-    def __init__(self, path):
-        self.path = path
-        self.data_dict = self.load_savefile(self.path)
+    def __init__(self, task_parameters_dict):
+        self.data_dict = task_parameters_dict
 
         self.element_type = self.data_dict['element'][:-4]
         self.parameters = self.data_dict['data']
 
         self.validation_schema = self.load_schema()
         self.valid = self.validate_data(data_dict=self.data_dict, validation_schema=self.validation_schema)
-
-    def load_savefile(self, path):
-        with open(path) as data_file:
-            data_dict = load(data_file)
-            return data_dict
 
     def get_material_properties(self):
         element_code = self.element_type[0]
@@ -28,6 +22,8 @@ class Element:
         concrete_properties = properties['concrete_class'][element_concrete_class].value
 
         element_steel_grade = self.parameters[f'{element_code}_steel_grade_combo']
+        if element_steel_grade == '20G2VY':
+            element_steel_grade = 'A_20G2VY'
         steel_properties = properties['steel_grade'][element_steel_grade].value
 
         return concrete_properties, steel_properties
@@ -77,7 +73,7 @@ class Element:
         return None, None
 
     def load_schema(self):
-        schema_path = f'./json_schema/{self.element_type}_schema.json'
+        schema_path = f'json_schema/{self.element_type}_schema.json'
         with open(schema_path, 'r') as json_schema_file:
             return load(json_schema_file)
 
@@ -152,9 +148,9 @@ class Plate(Element):
         variables = locals()
 
         calculation_results = {
-            'provided_area': provided_area,
-            'provided_reinforcement': provided_spacing,
-            'required_area': required_area,
+            'provided_area': [provided_area],
+            'provided_reinforcement': [provided_spacing],
+            'required_area': [required_area],
             'remarks': remarks,
         }
 
@@ -238,7 +234,7 @@ class Beam(Element):
 
                     alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mu))  # [-]
 
-                    required_area = alpha_1 * width * eff_height * (f_cd / f_yd)  # [m^2]
+                    required_area = max(alpha_1 * width * eff_height * (f_cd / f_yd), min_area)  # [m^2]
 
             else:
                 fl_height = self.fl_height / 100  # [m]
@@ -265,7 +261,7 @@ class Beam(Element):
 
                         alpha_1 = eta - sqrt((eta ** 2) - 2 * eta * mu)
 
-                        required_area = alpha_1 * fl_width * eff_height * (f_cd / f_yd)  # [m^2]
+                        required_area = max(alpha_1 * fl_width * eff_height * (f_cd / f_yd), min_area)  # [m^2]
 
                     else:  # real 'T' section
                         remarks.append("Section is a real T section, continuing calculations...")
@@ -279,7 +275,7 @@ class Beam(Element):
                         required_area_1 = bend_moment_1 / ((eff_height - 0.5 * fl_height) * f_yd)  # [m^2]
                         required_area_2 = (eta - sqrt((eta ** 2) - 2 * eta * mu)) * width * eff_height * (f_cd / f_yd)  # [m^2]
 
-                        required_area = required_area_1 + required_area_2  # [m^2]
+                        required_area = max(required_area_1 + required_area_2, min_area)  # [m^2]
 
             if mu_correct:
                 # Find provided area of reinforcement and amount of bars
@@ -296,9 +292,9 @@ class Beam(Element):
         variables = locals()
 
         calculation_results = {
-            'provided_area': provided_area,
-            'provided_reinforcement': provided_bars,
-            'required_area': required_area,
+            'provided_area': [provided_area],
+            'provided_reinforcement': [provided_bars],
+            'required_area': [required_area],
             'remarks': remarks,
         }
 
@@ -454,9 +450,7 @@ class Foot(Element):
 
     def calc_reinforcement(self):
         remarks = []
-        required_area_1, required_area_2 = None, None
-        provided_area_1, provided_bars_1 = None, None
-        provided_area_2, provided_bars_2 = None, None
+        required_area, provided_area, provided_spacing = None, None, None
 
         if not self.valid:
             remarks.append("The file is not valid.")
@@ -584,9 +578,9 @@ class Foot(Element):
         variables = locals()
 
         calculation_results = {
-            'provided_area': provided_area,
-            'provided_reinforcement': provided_spacing,
-            'required_area': required_area,
+            'provided_area': [provided_area],
+            'provided_reinforcement': [provided_spacing],
+            'required_area': [required_area],
             'remarks': remarks,
         }
 
@@ -599,8 +593,17 @@ class Foot(Element):
         return f"RC Foundation Foot, {self.length}cm x {self.width}cm, {self.height}cm high"
 
 
+dispatcher = {
+    'plate': Plate,
+    'beam': Beam,
+    'column': Column,
+    'foot': Foot,
+}
+
 if __name__ == '__main__':
     path = '../tests/foot_example.rcalc'
-    rc_element = Foot(path=path)
+    with open(path) as json_dict:
+        element_parameters = load(json_dict)
+    rc_element = Foot(element_parameters)
     print(rc_element.valid)
     print(rc_element.calc_reinforcement())
