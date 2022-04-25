@@ -64,7 +64,6 @@ class Element:
             max_bars = min_bars + add_bars
         else:
             max_bars = min_bars + add_bars - 1
-
         # Find amount of bars needed to fulfill the required reinforcement condition
         for provided_bars in range(min_bars, max_bars + 1):
             provided_area = provided_bars * pi * (bar_diam / 2) ** 2
@@ -133,7 +132,7 @@ class Plate(Element):
 
             else:
                 mu_correct = True
-                remarks.append("Mu value correct, continuing calculations...")
+                remarks.append("Mu value correct.")
 
                 alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mu))  # [-]
                 required_area = max(alpha_1 * width * eff_height * (f_cd / f_yd), min_area)  # [m^2]
@@ -162,7 +161,7 @@ class Plate(Element):
         }
 
     def __str__(self):
-        return f"RC Plate, {self.height}cm thick"
+        return f"Plate, {self.height}cm thick"
 
 
 class Beam(Element):
@@ -183,6 +182,7 @@ class Beam(Element):
     def calc_reinforcement(self):
         remarks = []
         required_area, provided_area, provided_bars = None, None, None
+        mu2_correct = True
 
         if not self.valid:
             remarks.append("The file is not valid.")
@@ -208,6 +208,7 @@ class Beam(Element):
             height = self.height / 100  # [m]
             width = self.width / 100  # [m]
             nom_cover = self.nom_cover / 100  # [m]
+            support_section = self.is_support_section
 
             # Load
             bend_moment = self.bend_moment  # [kNm]
@@ -222,7 +223,7 @@ class Beam(Element):
             mu_lim = 0.374  # [-]
 
             # check whether beam section is in support or span area
-            if self.is_support_section:
+            if support_section:
                 # Calculations for support section
                 mu = bend_moment / (width * (eff_height ** 2) * f_cd)  # [-]
 
@@ -231,7 +232,7 @@ class Beam(Element):
                     mu_correct = False
 
                 else:
-                    remarks.append("Mu value correct, continuing calculations...")
+                    remarks.append("Mu value correct.")
                     mu_correct = True
 
                     alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mu))  # [-]
@@ -250,7 +251,7 @@ class Beam(Element):
                     mu_correct = False
 
                 else:
-                    remarks.append("Mu value correct, continuing calculations...")
+                    remarks.append("Mu value correct.")
                     mu_correct = True
                     eta = 1.0
 
@@ -258,7 +259,7 @@ class Beam(Element):
 
                     # Check if the 'T' section is real or apparent
                     if lbda_x < fl_height:  # apparent 'T' section
-                        remarks.append("Section is an apparent T section, continuing calculations...")
+                        remarks.append("Section is an apparent T section.")
                         section_real = False
 
                         alpha_1 = eta - sqrt((eta ** 2) - 2 * eta * mu)
@@ -266,20 +267,24 @@ class Beam(Element):
                         required_area = max(alpha_1 * fl_width * eff_height * (f_cd / f_yd), min_area)  # [m^2]
 
                     else:  # real 'T' section
-                        remarks.append("Section is a real T section, continuing calculations...")
+                        remarks.append("Section is a real T section.")
                         section_real = True
 
                         bend_moment_1 = fl_height * (fl_width - width) * (eff_height - 0.5 * fl_height) * eta * f_cd  # [kNm]
                         bend_moment_2 = bend_moment - bend_moment_1  # [kNm]
 
-                        mu = bend_moment_2 / (width * f_cd * eff_height ** 2)
+                        mu_2 = bend_moment_2 / (width * f_cd * eff_height ** 2)
+                        if mu_2 > mu_lim:
+                            remarks.append("Mu value after recalculation too high!")
+                            mu2_correct = False
 
-                        required_area_1 = bend_moment_1 / ((eff_height - 0.5 * fl_height) * f_yd)  # [m^2]
-                        required_area_2 = (eta - sqrt((eta ** 2) - 2 * eta * mu)) * width * eff_height * (f_cd / f_yd)  # [m^2]
+                        else:
+                            required_area_1 = bend_moment_1 / ((eff_height - 0.5 * fl_height) * f_yd)  # [m^2]
+                            required_area_2 = (eta - sqrt((eta ** 2) - 2 * eta * mu)) * width * eff_height * (f_cd / f_yd)  # [m^2]
 
-                        required_area = max(required_area_1 + required_area_2, min_area)  # [m^2]
+                            required_area = max(required_area_1 + required_area_2, min_area)  # [m^2]
 
-            if mu_correct:
+            if mu_correct and mu2_correct:
                 # Find provided area of reinforcement and amount of bars
                 provided_area, provided_bars = self.get_beam_reinforcement(required_area=required_area,
                                                                             min_area=min_area,
@@ -307,7 +312,7 @@ class Beam(Element):
         }
 
     def __str__(self):
-        return f"RC Beam, {self.height}cm x {self.width}cm"
+        return f"Beam, {self.height}cm x {self.width}cm"
 
 class Column(Element):
     def __init__(self, path):
@@ -356,9 +361,12 @@ class Column(Element):
 
             eccentricity = max(height / 30, 0.02)
             if bend_moment < vert_force * eccentricity:
-                remarks.append("Modifying bending moment value, continuing calculations...")
+                remarks.append("Modifying bending moment value.")
+                moment_modified = True
                 bend_moment = vert_force * eccentricity
-            remarks.append("No need to modify bending moment value, continuing calculations...")
+            else:
+                remarks.append("No need to modify bending moment value.")
+                moment_modified = False
 
             a = (nom_cover + 0.5 * bar_diam + stirrup_diam)
             eff_height = height - a
@@ -377,9 +385,11 @@ class Column(Element):
 
             alpha_2 = (m_ed_1 - 0.371) / (1 - delta)
             if alpha_2 >= alpha_2_min:
+                alpha_2_ge = True
                 alpha_1 = max(0.5 - n_ed + alpha_2, alpha_1_min)
 
             elif alpha_2 < alpha_2_min:
+                alpha_2_ge = False
                 alpha_2 = alpha_2_min
 
                 root_expr = 0.947 - 1.95 * m_ed_1
@@ -388,7 +398,7 @@ class Column(Element):
                 else:
                     alpha_1 = alpha_1_min
 
-            remarks.append("Alpha values calculated, continuing calculations...")
+            remarks.append("Alpha values calculated.")
 
             min_area = max((0.1 * vert_force) / f_yd, (0.002 * width * height))  # [m^2]
             max_area = 0.04 * width * height  # [m^2]
@@ -396,8 +406,14 @@ class Column(Element):
             required_area_1 = alpha_1 * (s / f_yd)
             required_area_2 = alpha_2 * (s / f_yd)
 
-            if required_area_1 + required_area_2 >= min_area:
-                min_area = 0
+            if required_area_1 + required_area_2 < min_area:
+                if required_area_1 < min_area / 2 and required_area_2 < min_area / 2:
+                    required_area_1 = min_area / 2
+                    required_area_2 = min_area / 2
+                elif required_area_1 >= min_area / 2:
+                    required_area_2 = min_area - required_area_1
+                elif required_area_2 >= min_area / 2:
+                    required_area_1 = min_area - required_area_2
 
             provided_area_1, provided_bars_1 = self.get_beam_reinforcement(required_area=required_area_1,
                                                                            min_area=min_area / 2,
@@ -433,7 +449,7 @@ class Column(Element):
         }
 
     def __str__(self):
-        return f"RC Column, {self.height}cm x {self.width}cm"
+        return f"Column, {self.height}cm x {self.width}cm"
 
 
 class Foot(Element):
@@ -595,7 +611,7 @@ class Foot(Element):
         }
 
     def __str__(self):
-        return f"RC Foundation Foot, {self.length}cm x {self.width}cm, {self.height}cm high"
+        return f"Foundation Foot, {self.length}cm x {self.width}cm, {self.height}cm high"
 
 
 dispatcher = {
@@ -606,10 +622,11 @@ dispatcher = {
 }
 
 if __name__ == '__main__':
-    path = '../tests/foot_example.rcalc'
+    path = '../tests/beam_span_example.rcalc'
     with open(path) as json_dict:
         element_parameters = load(json_dict)
-    rc_element = Foot(element_parameters)
+    element_class = dispatcher[element_parameters['element'][:-4]]
+    rc_element = element_class(element_parameters)
     print(rc_element.valid)
     results = rc_element.calc_reinforcement()
     print(results)
