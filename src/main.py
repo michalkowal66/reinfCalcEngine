@@ -10,18 +10,17 @@ class Element:
         self.data_dict = task_parameters_dict
 
         self.element_type = self.data_dict['element'][:-4]
+        self.element_code = self.element_type[0]
         self.parameters = self.data_dict['data']
 
         self.validation_schema = self.load_schema()
         self.valid = self.validate_data(data_dict=self.data_dict, validation_schema=self.validation_schema)
 
     def get_material_properties(self):
-        element_code = self.element_type[0]
-
-        element_concrete_class = self.parameters[f'{element_code}_concr_class_combo'].replace('/', '_')
+        element_concrete_class = self.parameters[f'{self.element_code}_concr_class_combo'].replace('/', '_')
         concrete_properties = properties['concrete_class'][element_concrete_class].value
 
-        element_steel_grade = self.parameters[f'{element_code}_steel_grade_combo']
+        element_steel_grade = self.parameters[f'{self.element_code}_steel_grade_combo']
         if element_steel_grade == '20G2VY':
             element_steel_grade = 'A_20G2VY'
         steel_properties = properties['steel_grade'][element_steel_grade].value
@@ -71,6 +70,48 @@ class Element:
                 return provided_area, provided_bars
         return None, None
 
+    def get_nominal_cover(self):
+        remarks = []
+        exposure_class = self.parameters[f'{self.element_code}_exp_combo']
+        concrete_class = self.parameters[f'{self.element_code}_concr_class_combo']
+
+        exposure_class_paroperties = properties['exp_class'][exposure_class].value
+        recommended_concerete_class = exposure_class_paroperties['concrete_class']
+        if int(concrete_class[1:3]) < int(recommended_concerete_class[1:3]):
+            remarks.append(
+                f"For exposure class {exposure_class} the minimum recommended concrete class is {recommended_concerete_class.replace('_', '/')}")
+
+        # Assumed recommended class of the structure according to EC2
+        structure_class = 4
+        if exposure_class in ['X0', 'XC1', 'XC2', 'XC3', 'XD3', 'XS2', 'XS3']:
+            if int(concrete_class[1:3]) >= 30:
+                structure_class -= 1
+        elif exposure_class in ['XC4', 'XD1', 'XD2', 'XS1']:
+            if int(concrete_class[1:3]) >= 40:
+                structure_class -= 1
+        if self.element_code == 'p':
+            structure_class -= 1
+
+        # Minimum cover due to the durability requirement
+        c_min_dur = exposure_class_paroperties[f"S{structure_class}"]
+        if c_min_dur is None:
+            remarks.append(f"Not able to calculate nominal cover for exposure class {exposure_class}.")
+            return None, remarks
+        # Minimum cover due to the bond requirement (assuming dg <= 32mm)
+        c_min_b = int(self.parameters[f'{self.element_code}_bar_diam_combo'])
+
+        c_min = max(c_min_dur, c_min_b, 10)
+        c_dev = 10
+
+        recommended_c_nom = c_min + c_dev
+        c_nom = self.parameters[f'{self.element_code}_concr_cover_lineEdit']
+        if c_nom != recommended_c_nom:
+            remarks.append(f"Recommended nominal concrete cover value is {recommended_c_nom} mm.")
+        else:
+            remarks.append(f"Nominal concrete cover correct.")
+
+        return recommended_c_nom/1000, remarks
+
     def load_schema(self):
         schema_path = f'json_schema/{self.element_type}_schema.json'
         with open(schema_path, 'r') as json_schema_file:
@@ -112,6 +153,10 @@ class Plate(Element):
             height = self.height / 100  # [m]
             width = 1  # [m]
             nom_cover = self.nom_cover / 100  # [m]
+
+            # Check nominal cover
+            recommended_nom_cover, nom_cover_remarks = self.get_nominal_cover()
+            remarks.append(*nom_cover_remarks)
 
             # Load
             bend_moment = self.bend_moment  # [kNm]
@@ -209,6 +254,10 @@ class Beam(Element):
             width = self.width / 100  # [m]
             nom_cover = self.nom_cover / 100  # [m]
             support_section = self.is_support_section
+
+            # Check nominal cover
+            recommended_nom_cover, nom_cover_remarks = self.get_nominal_cover()
+            remarks.append(*nom_cover_remarks)
 
             # Load
             bend_moment = self.bend_moment  # [kNm]
@@ -355,6 +404,10 @@ class Column(Element):
             width = self.width / 100  # [m]
             nom_cover = self.nom_cover / 100  # [m]
 
+            # Check nominal cover
+            recommended_nom_cover, nom_cover_remarks = self.get_nominal_cover()
+            remarks.append(*nom_cover_remarks)
+
             # Load
             bend_moment = self.bend_moment  # [kNm]
             vert_force = self.vert_force  # [kN]
@@ -363,16 +416,16 @@ class Column(Element):
             if bend_moment < vert_force * eccentricity:
                 remarks.append("Modifying bending moment value.")
                 moment_modified = True
-                bend_moment = vert_force * eccentricity
+                bend_moment = vert_force * eccentricity  # [kNm]
             else:
                 remarks.append("No need to modify bending moment value.")
                 moment_modified = False
 
-            a = (nom_cover + 0.5 * bar_diam + stirrup_diam)
-            eff_height = height - a
+            a = (nom_cover + 0.5 * bar_diam + stirrup_diam)  # [m]
+            eff_height = height - a  # [m]
             delta = a / eff_height
 
-            s = width * eff_height * f_cd
+            s = width * eff_height * f_cd  # [kN]
 
             n_ed = vert_force / s
             m_ed = bend_moment / (s * eff_height)
@@ -403,8 +456,8 @@ class Column(Element):
             min_area = max((0.1 * vert_force) / f_yd, (0.002 * width * height))  # [m^2]
             max_area = 0.04 * width * height  # [m^2]
 
-            required_area_1 = alpha_1 * (s / f_yd)
-            required_area_2 = alpha_2 * (s / f_yd)
+            required_area_1 = alpha_1 * (s / f_yd)  # [m^2]
+            required_area_2 = alpha_2 * (s / f_yd)  # [m^2]
 
             if required_area_1 + required_area_2 < min_area:
                 if required_area_1 < min_area / 2 and required_area_2 < min_area / 2:
@@ -468,6 +521,22 @@ class Foot(Element):
 
         self.vert_force = self.parameters['f_vert_lineEdit']
 
+    def get_a_coefficient(self, dependent_val):
+        if dependent_val <= 5:
+            return 0.2
+        elif 5 < dependent_val <= 35:
+            return - 3.4604e-4*dependent_val**2 + 4.0508e-2*dependent_val + 6.1094e-3
+        elif 35 <= dependent_val <= 50:
+            return 6.9861e-6*dependent_val**3 - 1.0796e-3*dependent_val**2 + 6.6182e-2*dependent_val - 2.9342e-1
+        elif 50 < dependent_val <= 100:
+            return 2.5424e-8*dependent_val**3 - 3.5481e-5*dependent_val**2 + 1.3977e-2*dependent_val + 5.7667e-1
+        elif 100 < dependent_val <= 150:
+            return 9.9559e-8*dependent_val**3 - 5.7721e-5*dependent_val**2 + 1.6201e-2*dependent_val + 5.0253e-1
+        elif 150 < dependent_val <= 300:
+            return 2.3680e-8*dependent_val**3 - 2.3576e-5*dependent_val**2 + 1.1079e-2*dependent_val + 7.5862e-1
+        elif 300 < dependent_val <= 500:
+            return - 1e-71*dependent_val**3 - 2.2634e-6*dependent_val**2 + 4.6857e-3*dependent_val + 1.3980
+
     def calc_reinforcement(self):
         remarks = []
         required_area, provided_area, provided_spacing = None, None, None
@@ -500,25 +569,29 @@ class Foot(Element):
             c_height = self.c_height / 100  # [m]
             c_width = self.c_width / 100  # [m]
 
+            # Check nominal cover
+            recommended_nom_cover, nom_cover_remarks = self.get_nominal_cover()
+            remarks.append(*nom_cover_remarks)
+
             # Load
             vert_force = self.vert_force  # [kN]
 
-            f_bd = 2.25 * f_ctd
-            required_anchorage = (col_bar_diam / 4) * (f_yd / f_bd)
-            min_anchorage = max(0.6 * required_anchorage, 10 * col_bar_diam, 0.1)
-            assumed_anchorage = max(min_anchorage, round(required_anchorage, 2))
+            f_bd = 2.25 * f_ctd  # [kPa]
+            required_anchorage = (col_bar_diam / 4) * (f_yd / f_bd)  # [m]
+            min_anchorage = max(0.6 * required_anchorage, 10 * col_bar_diam, 0.1)  # [m]
+            assumed_anchorage = max(min_anchorage, ceil(required_anchorage*100)/100)  # [m]
 
-            nu_rd_max = 0.4 * 0.6 * (1 - (f_ck / 250000)) * f_cd
+            nu_rd_max = 0.4 * 0.6 * (1 - (f_ck / 250000)) * f_cd  # [kPa]
 
             # Internal column
             beta = 1.15
 
             # Column's perimeter
-            u0 = 2 * (c_height + c_width)
+            u0 = 2 * (c_height + c_width)  # [m]
 
             # Minimum height and cover
-            h_min = (beta * vert_force) / (nu_rd_max * u0)
-            h_cover = assumed_anchorage + 1.5 * bar_diam
+            h_min = (beta * vert_force) / (nu_rd_max * u0)  # [m]
+            h_cover = assumed_anchorage + 1.5 * bar_diam  # [m]
 
             if height < h_min or height < h_cover:
                 remarks.append("Incorrect height of the element.")
@@ -527,27 +600,27 @@ class Foot(Element):
             else:
                 remarks.append("Height of the element correct.")
                 height_correct = True
-                area = width * length
+                area = width * length  # [m^2]
 
                 # Stress calculation
-                sigma = vert_force / area
+                sigma = vert_force / area  # [kPa]
 
-                eff_length = (width - c_width) / 2 + 0.15 * c_width
-                bend_moment = sigma * length * ((eff_length ** 2) / 2)
+                eff_length = (width - c_width) / 2 + 0.15 * c_width  # [m]
+                bend_moment = sigma * length * ((eff_length ** 2) / 2)  # [kNm]
 
                 # Effective height calculation
                 eff_height = height - nom_cover - 1.5 * bar_diam  # [m]
 
                 # Arm of internal forces
-                z = 0.9 * eff_height
+                z = 0.9 * eff_height  # [m]
 
                 # Min. and max. reinforcement area
-                # TODO Make function to read coefficient from the graph - fig. 22.2 - [1]
-                min_area = 0.0014 * length * eff_height  # [m^2]
+                area_coefficient = concrete_properties['area_coefficient']
+                min_area = area_coefficient * length * eff_height  # [m^2]
                 max_area = 0.04 * length * height  # [m^2]
 
-                total_required_area = bend_moment / (z * f_yd)  # [m^2]
-                required_area = max(total_required_area, min_area) / length  # [m^2]
+                total_required_area = max(bend_moment / (z * f_yd), min_area)  # [m^2]
+                required_area = total_required_area / length  # [m^2]
 
                 provided_area_per_rm, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
                                                                                       min_area=min_area / length,
@@ -555,12 +628,12 @@ class Foot(Element):
                                                                                       bar_diam=bar_diam,
                                                                                       cover=nom_cover)
 
-                provided_area = provided_area_per_rm * length
+                provided_area = provided_area_per_rm * length  # [m^2]
 
             if all([provided_area, provided_spacing]):
                 remarks.append("Punching verification.")
                 # Punching verification
-                nu_ed = vert_force / (u0 * eff_height)
+                nu_ed = vert_force / (u0 * eff_height)  # [kPa]
 
                 if nu_ed > nu_rd_max:
                     nu_ed_correct = False
@@ -570,21 +643,21 @@ class Foot(Element):
                     nu_ed_correct = True
                     remarks.append("EC requirement fulfilled, nu_ed value correct.")
 
-                    # TODO Read a_coeff from graph - fig. 16.14 - [1]:
-                    a_coeff = 1.15
+                    a_dependant = vert_force / (sigma*c_width*c_height)
+                    a_coeff = round(self.get_a_coefficient(a_dependant), 2)
 
-                    a = a_coeff * c_width
+                    a = a_coeff * c_width  # [m]
 
                     rho_l = provided_area / (length * eff_height)
                     k = min(1 + sqrt(200 / (eff_height * 1000)), 2)
-                    nu_min = 0.035 * (k ** (1.5)) * sqrt(f_ck * 1000)
+                    nu_min = 0.035 * (k ** (1.5)) * sqrt(f_ck * 1000)  # [kPa]
 
-                    nu_rd = max(0.128 * k * (100 * rho_l * ((f_ck)) ** (1 / 3)), nu_min) * 2 * eff_height / a
+                    nu_rd = max(0.128 * k * ((100 * rho_l * f_ck) ** (1 / 3)), nu_min) * 2 * eff_height / a  # [kPa]
 
-                    u = 4 * c_width + 2 * c_height + 2 * pi * a
+                    u = 2 * c_width + 2 * c_height + 2 * pi * a  # [m]
 
-                    vert_force_red = vert_force - sigma * (c_width * c_height + 2 * a * (c_width + c_height) + pi * a ** 2)
-                    nu_ed_red = vert_force_red / (u * eff_height)
+                    vert_force_red = vert_force - sigma * (c_width * c_height + 2 * a * (c_width + c_height) + pi * a ** 2)  # [kN]
+                    nu_ed_red = vert_force_red / (u * eff_height)  # [kPa]
 
                     if nu_ed_red > nu_rd:
                         nu_ed_red_correct = False
@@ -601,7 +674,7 @@ class Foot(Element):
         calculation_results = {
             'provided_area': [provided_area],
             'provided_reinforcement': [provided_spacing],
-            'required_area': [required_area],
+            'required_area': [total_required_area],
             'remarks': remarks,
         }
 
@@ -622,7 +695,7 @@ dispatcher = {
 }
 
 if __name__ == '__main__':
-    path = '../tests/beam_span_example.rcalc'
+    path = '../tests/foot_example.rcalc'
     with open(path) as json_dict:
         element_parameters = load(json_dict)
     element_class = dispatcher[element_parameters['element'][:-4]]
