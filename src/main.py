@@ -100,10 +100,11 @@ class Element:
         # Minimum cover due to the bond requirement (assuming dg <= 32mm)
         c_min_b = int(self.parameters[f'{self.element_code}_bar_diam_combo'])
 
-        c_min = max(c_min_dur, c_min_b, 10)
+        c_min = 40 if self.element_code == 'f' else max(c_min_dur, c_min_b, 10)
         c_dev = 10
 
         recommended_c_nom = c_min + c_dev
+
         c_nom = self.parameters[f'{self.element_code}_concr_cover_lineEdit']
         if c_nom != recommended_c_nom:
             remarks.append(f"Recommended nominal concrete cover value is {recommended_c_nom} mm.")
