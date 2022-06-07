@@ -6,7 +6,27 @@ from jsonschema.exceptions import ValidationError
 
 
 class Element:
+    """
+    Parent element class of the engine used to initialise the task calculation
+
+    Attributes
+    ----------
+    None
+    """
     def __init__(self, task_parameters_dict):
+        """
+        Initialize information about the task such as type of the element, and its scheme. Validate information with
+        the appropriate schema.
+
+        Parameters
+        ----------
+        task_parameters_dict : dict
+            Dictionary containing parameters of the task
+
+        Returns
+        -------
+        None
+        """
         self.data_dict = task_parameters_dict
 
         self.element_type = self.data_dict['element'][:-4]
@@ -17,6 +37,17 @@ class Element:
         self.valid = self.validate_data(data_dict=self.data_dict, validation_schema=self.validation_schema)
 
     def get_material_properties(self):
+        """
+        Return the material properties for the task from the materialProperties module
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        dict, dict
+        """
         element_concrete_class = self.parameters[f'{self.element_code}_concr_class_combo'].replace('/', '_')
         concrete_properties = properties['concrete_class'][element_concrete_class].value
 
@@ -28,6 +59,20 @@ class Element:
         return concrete_properties, steel_properties
 
     def validate_data(self, data_dict, validation_schema):
+        """
+        Validate the data dictionary with the appropriate schema using jsonschema module
+
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary containing parameters of the task
+        validation_schema : dict
+            Dictionary containing JSON schema for selected element type
+
+        Returns
+        -------
+        bool
+        """
         try:
             validate(instance=data_dict, schema=validation_schema)
         except ValidationError:
@@ -36,6 +81,26 @@ class Element:
             return True
 
     def get_plate_reinforcement(self, required_area, min_area, max_area, bar_diam, cover):
+        """
+        Return provided reinforcement area and its spacing for plates, on the basis of specified requirements.
+
+        Parameters
+        ----------
+        required_area : float
+            Required area of the reinforcement
+        min_area : float
+            Minimum area of the reinforcement
+        max_area : float
+            Maximum area of the reinforcement
+        bar_diam : float
+            Desired diameter of the rebar
+        cover : float
+            Concrete cover
+
+        Returns
+        -------
+        float/None, float/None
+        """
         # List containing typical bar axial spacing for plate reinforcement
         axial_spacings = [0.3, 0.25, 0.22, 0.2, 0.19, 0.18, 0.17, 0.15, 0.15,
                           0.14, 0.13, 0.125, 0.12, 0.11, 0.1, 0.08, 0.05]
@@ -51,6 +116,30 @@ class Element:
         return None, None
 
     def get_beam_reinforcement(self, required_area, min_area, max_area, bar_diam, stirrup_diam, width, cover):
+        """
+        Return provided reinforcement area and amount of bars, on the basis of specified requirements.
+
+        Parameters
+        ----------
+        required_area : float
+            Required area of the reinforcement
+        min_area : float
+            Minimum area of the reinforcement
+        max_area : float
+            Maximum area of the reinforcement
+        bar_diam : float
+            Desired diameter of the rebar
+        stirrup_diam : float
+            Desired diameter of the stirrups
+        width : float
+            Width of the element
+        cover : float
+            Concrete cover
+
+        Returns
+        -------
+        float/None, float/None
+        """
         # Minimum bars required
         min_bars = 2
 
@@ -71,6 +160,17 @@ class Element:
         return None, None
 
     def get_nominal_cover(self):
+        """
+        Return recommended nominal concrete cover and remarks from the course of calculation process
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        float/None, list
+        """
         remarks = []
         exposure_class = self.parameters[f'{self.element_code}_exp_combo']
         concrete_class = self.parameters[f'{self.element_code}_concr_class_combo']
@@ -114,13 +214,43 @@ class Element:
         return recommended_c_nom / 1000, remarks
 
     def load_schema(self):
+        """
+        Return dictionary containing schema, load from schemas directory, for data structure verification.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        dict
+        """
         schema_path = f'json_schema/{self.element_type}_schema.json'
         with open(schema_path, 'r') as json_schema_file:
             return load(json_schema_file)
 
 
 class Plate(Element):
+    """
+    Plate element class, used for calculations for plates
+
+    Attributes
+    ----------
+    None
+    """
     def __init__(self, path):
+        """
+        Extend Parent's __init__ method. Initialize detailed information about the task (geometry, loads).
+
+        Parameters
+        ----------
+        path : str
+            Path to the file
+
+        Returns
+        -------
+        None
+        """
         super().__init__(path)
         self.height = self.parameters['p_th_lineEdit']
         self.nom_cover = self.parameters['p_concr_cover_lineEdit']
@@ -128,6 +258,24 @@ class Plate(Element):
         self.bend_moment = self.parameters['p_moment_lineEdit']
 
     def calc_reinforcement(self):
+        """
+        Return the results of calculations for a selected element on the basis of the prepared algorithm.
+
+        Initialize the result variables and a remarks list. Follow the calculation algorithm to calculate
+        the required area, provided area, and provided spacing of the reinforcement. Add remarks about the
+        calculation progress to the remarks list. Return a dictionary containing results and parameters dictionaries.
+        Dictionary results contains only essential information about the calculations (only results) in the form of
+        a dictionary, whereas parameters contains a dictionary obtained using locals method, to include detailed
+        information about the calculation process.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        float/None, float/None, float/None
+        """
         remarks = []
         required_area, provided_area, provided_spacing = None, None, None
 
@@ -211,7 +359,26 @@ class Plate(Element):
 
 
 class Beam(Element):
+    """
+    Beam element class, used for calculations for beams
+
+    Attributes
+    ----------
+    None
+    """
     def __init__(self, path):
+        """
+        Extend Parent's __init__ method. Initialize detailed information about the task (geometry, loads).
+
+        Parameters
+        ----------
+        path : str
+            Path to the file
+
+        Returns
+        -------
+        None
+        """
         super().__init__(path)
 
         self.height = self.parameters['b_height_lineEdit']
@@ -226,6 +393,24 @@ class Beam(Element):
             self.fl_width = self.parameters['b_fl_width_lineEdit']
 
     def calc_reinforcement(self):
+        """
+        Return the results of calculations for a selected element on the basis of the prepared algorithm.
+
+        Initialize the result variables and a remarks list. Follow the calculation algorithm to calculate
+        the required area, provided area, and provided bars of the reinforcement. Add remarks about the
+        calculation progress to the remarks list. Return a dictionary containing results and parameters dictionaries.
+        Dictionary results contains only essential information about the calculations (only results) in the form of
+        a dictionary, whereas parameters contains a dictionary obtained using locals method, to include detailed
+        information about the calculation process.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        float/None, float/None, float/None
+        """
         remarks = []
         required_area, provided_area, provided_bars = None, None, None
         mu2_correct = True
@@ -368,7 +553,26 @@ class Beam(Element):
 
 
 class Column(Element):
+    """
+    Column element class, used for calculations for columns
+
+    Attributes
+    ----------
+    None
+    """
     def __init__(self, path):
+        """
+        Extend Parent's __init__ method. Initialize detailed information about the task (geometry, loads).
+
+        Parameters
+        ----------
+        path : str
+            Path to the file
+
+        Returns
+        -------
+        None
+        """
         super().__init__(path)
 
         self.height = self.parameters['c_height_lineEdit']
@@ -380,6 +584,24 @@ class Column(Element):
         self.vert_force = self.parameters['c_vertical_lineEdit']
 
     def calc_reinforcement(self):
+        """
+        Return the results of calculations for a selected element on the basis of the prepared algorithm.
+
+        Initialize the result variables and a remarks list. Follow the calculation algorithm to calculate
+        the required area, provided area, and provided bars of the reinforcement. Add remarks about the
+        calculation progress to the remarks list. Return a dictionary containing results and parameters dictionaries.
+        Dictionary results contains only essential information about the calculations (only results) in the form of
+        a dictionary, whereas parameters contains a dictionary obtained using locals method, to include detailed
+        information about the calculation process.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        float/None, float/None, float/None
+        """
         remarks = []
         required_area_1, required_area_2 = None, None
         provided_area_1, provided_bars_1 = None, None
@@ -510,7 +732,26 @@ class Column(Element):
 
 
 class Foot(Element):
+    """
+    Foot element class, used for calculations for foot foundations
+
+    Attributes
+    ----------
+    None
+    """
     def __init__(self, path):
+        """
+        Extend Parent's __init__ method. Initialize detailed information about the task (geometry, loads).
+
+        Parameters
+        ----------
+        path : str
+            Path to the file
+
+        Returns
+        -------
+        None
+        """
         super().__init__(path)
 
         self.height = self.parameters['f_fheight_lineEdit']
@@ -526,6 +767,18 @@ class Foot(Element):
         self.vert_force = self.parameters['f_vert_lineEdit']
 
     def get_a_coefficient(self, dependent_val):
+        """
+        Return a coefficient value for the purpose of punching verification using prepared formulas
+
+        Parameters
+        ----------
+        dependent_val : float
+            Dependant used to determine the a coefficient value
+
+        Returns
+        -------
+        float
+        """
         if dependent_val <= 5:
             return 0.2
         elif 5 < dependent_val <= 35:
@@ -542,6 +795,24 @@ class Foot(Element):
             return - 1e-71 * dependent_val ** 3 - 2.2634e-6 * dependent_val ** 2 + 4.6857e-3 * dependent_val + 1.3980
 
     def calc_reinforcement(self):
+        """
+        Return the results of calculations for a selected element on the basis of the prepared algorithm.
+
+        Initialize the result variables and a remarks list. Follow the calculation algorithm to calculate
+        the required area, provided area, and provided spacing of the reinforcement. Add remarks about the
+        calculation progress to the remarks list. Perform calculations for punching verification.
+        Return a dictionary containing results and parameters dictionaries. Dictionary results contains only essential
+        information about the calculations (only results) in the form of a dictionary, whereas parameters contains
+        a dictionary obtained using locals method, to include detailed information about the calculation process.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        float/None, float/None, float/None
+        """
         remarks = []
         required_area, provided_area, provided_spacing = None, None, None
 
@@ -698,6 +969,8 @@ dispatcher = {
     'column': Column,
     'foot': Foot,
 }
+"""dict: Dictionary used to automatically assign proper element class based on element type
+"""
 
 if __name__ == '__main__':
     path = '../examples/foot_example.rcalc'
