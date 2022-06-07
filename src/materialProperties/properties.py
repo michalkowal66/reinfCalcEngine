@@ -14,6 +14,7 @@ class ExpClass(Enum):
     - max_wc: maximum water/cement ration
     - min_cem: minimum content of cement [kg/m^3]
     - remarks: remarks about exposure class
+    - S1-6: minimum concrete cover in [mm] for selected Strcutre class
     """
     X0 = {"exp_class": "X0", "concrete_class": "C12/15", "max_wc": None, "min_cem": None,
           "remarks": "No corrosion risk", "S1": 10, "S2": 10, "S3": 10, "S4": 10, "S5": 15, "S6": 20}
@@ -69,6 +70,7 @@ class ConcreteClass(Enum):
     - fctk_0.05: 5% fractile tensile strength [MPa],
     - fctk_0.95: 95% fractile tensile strength [MPa],
     - Ecm: Elastic modulus [GPa]
+    - area_coefficient: Coefficient for min. reinforcement area
      """
     C12_15 = {"concrete_class": "C12/15", "fck": 12, "fck_cube": 15, "fcm": 20, "fctm": 1.6, "fctk_0.05": 1.1,
               "fctk_0.95": 2.0, "Ecm": 27, "area_coefficient": 0.0013}
@@ -140,7 +142,8 @@ translate = {
     "Ecm": "Elastic modulus [GPa]",
     "steel_grade": "Steel grade",
     "fyd": "Design yield strength [MPa]",
-    "fyk": "Characteristic yield strength [MPa]"
+    "fyk": "Characteristic yield strength [MPa]",
+    "area_coefficient": "Area coefficient",
 }
 """dict: Dictionary with elaborated keys of property classes
 """
