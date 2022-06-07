@@ -110,7 +110,7 @@ class Element:
         else:
             remarks.append(f"Nominal concrete cover correct.")
 
-        return recommended_c_nom/1000, remarks
+        return recommended_c_nom / 1000, remarks
 
     def load_schema(self):
         schema_path = f'json_schema/{self.element_type}_schema.json'
@@ -174,12 +174,12 @@ class Plate(Element):
             if mu > mu_lim:
                 remarks.append("Mu value too high!")
                 mu_correct = False
-
             else:
                 mu_correct = True
                 remarks.append("Mu value correct.")
 
                 alpha_1 = 0.973 - sqrt((0.974 - 1.95 * mu))  # [-]
+
                 required_area = max(alpha_1 * width * eff_height * (f_cd / f_yd), min_area)  # [m^2]
 
                 provided_area, provided_spacing = self.get_plate_reinforcement(required_area=required_area,
@@ -319,7 +319,8 @@ class Beam(Element):
                         remarks.append("Section is a real T section.")
                         section_real = True
 
-                        bend_moment_1 = fl_height * (fl_width - width) * (eff_height - 0.5 * fl_height) * eta * f_cd  # [kNm]
+                        bend_moment_1 = fl_height * (fl_width - width) * (
+                                    eff_height - 0.5 * fl_height) * eta * f_cd  # [kNm]
                         bend_moment_2 = bend_moment - bend_moment_1  # [kNm]
 
                         mu_2 = bend_moment_2 / (width * f_cd * eff_height ** 2)
@@ -329,19 +330,20 @@ class Beam(Element):
 
                         else:
                             required_area_1 = bend_moment_1 / ((eff_height - 0.5 * fl_height) * f_yd)  # [m^2]
-                            required_area_2 = (eta - sqrt((eta ** 2) - 2 * eta * mu)) * width * eff_height * (f_cd / f_yd)  # [m^2]
+                            required_area_2 = (eta - sqrt((eta ** 2) - 2 * eta * mu)) * width * eff_height * (
+                                        f_cd / f_yd)  # [m^2]
 
                             required_area = max(required_area_1 + required_area_2, min_area)  # [m^2]
 
             if mu_correct and mu2_correct:
                 # Find provided area of reinforcement and amount of bars
                 provided_area, provided_bars = self.get_beam_reinforcement(required_area=required_area,
-                                                                            min_area=min_area,
-                                                                            max_area=max_area,
-                                                                            bar_diam=bar_diam,
-                                                                            stirrup_diam=stirrup_diam,
-                                                                            width=width,
-                                                                            cover=nom_cover)
+                                                                           min_area=min_area,
+                                                                           max_area=max_area,
+                                                                           bar_diam=bar_diam,
+                                                                           stirrup_diam=stirrup_diam,
+                                                                           width=width,
+                                                                           cover=nom_cover)
 
         remarks.append("Calculations finished.")
 
@@ -362,6 +364,7 @@ class Beam(Element):
 
     def __str__(self):
         return f"Beam, {self.height}cm x {self.width}cm"
+
 
 class Column(Element):
     def __init__(self, path):
@@ -525,17 +528,17 @@ class Foot(Element):
         if dependent_val <= 5:
             return 0.2
         elif 5 < dependent_val <= 35:
-            return - 3.4604e-4*dependent_val**2 + 4.0508e-2*dependent_val + 6.1094e-3
+            return - 3.4604e-4 * dependent_val ** 2 + 4.0508e-2 * dependent_val + 6.1094e-3
         elif 35 <= dependent_val <= 50:
-            return 6.9861e-6*dependent_val**3 - 1.0796e-3*dependent_val**2 + 6.6182e-2*dependent_val - 2.9342e-1
+            return 6.9861e-6 * dependent_val ** 3 - 1.0796e-3 * dependent_val ** 2 + 6.6182e-2 * dependent_val - 2.9342e-1
         elif 50 < dependent_val <= 100:
-            return 2.5424e-8*dependent_val**3 - 3.5481e-5*dependent_val**2 + 1.3977e-2*dependent_val + 5.7667e-1
+            return 2.5424e-8 * dependent_val ** 3 - 3.5481e-5 * dependent_val ** 2 + 1.3977e-2 * dependent_val + 5.7667e-1
         elif 100 < dependent_val <= 150:
-            return 9.9559e-8*dependent_val**3 - 5.7721e-5*dependent_val**2 + 1.6201e-2*dependent_val + 5.0253e-1
+            return 9.9559e-8 * dependent_val ** 3 - 5.7721e-5 * dependent_val ** 2 + 1.6201e-2 * dependent_val + 5.0253e-1
         elif 150 < dependent_val <= 300:
-            return 2.3680e-8*dependent_val**3 - 2.3576e-5*dependent_val**2 + 1.1079e-2*dependent_val + 7.5862e-1
+            return 2.3680e-8 * dependent_val ** 3 - 2.3576e-5 * dependent_val ** 2 + 1.1079e-2 * dependent_val + 7.5862e-1
         elif 300 < dependent_val <= 500:
-            return - 1e-71*dependent_val**3 - 2.2634e-6*dependent_val**2 + 4.6857e-3*dependent_val + 1.3980
+            return - 1e-71 * dependent_val ** 3 - 2.2634e-6 * dependent_val ** 2 + 4.6857e-3 * dependent_val + 1.3980
 
     def calc_reinforcement(self):
         remarks = []
@@ -579,7 +582,7 @@ class Foot(Element):
             f_bd = 2.25 * f_ctd  # [kPa]
             required_anchorage = (col_bar_diam / 4) * (f_yd / f_bd)  # [m]
             min_anchorage = max(0.6 * required_anchorage, 10 * col_bar_diam, 0.1)  # [m]
-            assumed_anchorage = max(min_anchorage, ceil(required_anchorage*100)/100)  # [m]
+            assumed_anchorage = max(min_anchorage, ceil(required_anchorage * 100) / 100)  # [m]
 
             nu_rd_max = 0.4 * 0.6 * (1 - (f_ck / 250000)) * f_cd  # [kPa]
 
@@ -643,7 +646,7 @@ class Foot(Element):
                     nu_ed_correct = True
                     remarks.append("EC requirement fulfilled, nu_ed value correct.")
 
-                    a_dependant = vert_force / (sigma*c_width*c_height)
+                    a_dependant = vert_force / (sigma * c_width * c_height)
                     a_coeff = round(self.get_a_coefficient(a_dependant), 2)
 
                     a = a_coeff * c_width  # [m]
@@ -656,7 +659,8 @@ class Foot(Element):
 
                     u = 2 * c_width + 2 * c_height + 2 * pi * a  # [m]
 
-                    vert_force_red = vert_force - sigma * (c_width * c_height + 2 * a * (c_width + c_height) + pi * a ** 2)  # [kN]
+                    vert_force_red = vert_force - sigma * (
+                                c_width * c_height + 2 * a * (c_width + c_height) + pi * a ** 2)  # [kN]
                     nu_ed_red = vert_force_red / (u * eff_height)  # [kPa]
 
                     if nu_ed_red > nu_rd:
@@ -695,11 +699,11 @@ dispatcher = {
 }
 
 if __name__ == '__main__':
-    path = '../tests/foot_example.rcalc'
+    path = '../examples/foot_example.rcalc'
     with open(path) as json_dict:
         element_parameters = load(json_dict)
-    element_class = dispatcher[element_parameters['element'][:-4]]
-    rc_element = element_class(element_parameters)
+    ElementClass = dispatcher[element_parameters['element'][:-4]]
+    rc_element = ElementClass(element_parameters)
     print(rc_element.valid)
     results = rc_element.calc_reinforcement()
     print(results)
